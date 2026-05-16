@@ -77,7 +77,7 @@ export function BrandDiagnosisForm() {
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 第一行：品牌名 + 立即诊断 */}
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
               <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="输入品牌名，例如：三三狐" maxLength={60} required />
             </div>

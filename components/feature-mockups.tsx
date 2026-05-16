@@ -30,7 +30,7 @@ function DetectionMockup() {
         </div>
 
         {/* 评分卡片 */}
-        <div className="mb-4 grid grid-cols-4 gap-3">
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           <div className="rounded-lg bg-[#E65F2B]/5 p-3 text-center border border-[#E65F2B]/20">
             <div className="text-2xl font-bold text-[#E65F2B]">72</div>
             <div className="text-xs text-[#718096]">GEO总分</div>
@@ -98,7 +98,7 @@ function DashboardMockup() {
       {/* 内容区 */}
       <div className="p-5">
         {/* 指标卡片 */}
-        <div className="mb-4 grid grid-cols-3 gap-3">
+        <div className="mb-4 grid grid-cols-3 gap-2">
           <div className="rounded-lg border border-[#E2E8F0] p-3">
             <div className="text-xs text-[#718096]">GEO总分</div>
             <div className="flex items-end gap-1">
