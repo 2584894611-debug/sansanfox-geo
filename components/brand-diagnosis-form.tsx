@@ -75,76 +75,57 @@ export function BrandDiagnosisForm() {
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_auto]">
-            <Input
-              value={brandName}
-              onChange={(e) => setBrandName(e.target.value)}
-              placeholder="输入品牌名，例如：三三狐"
-              maxLength={60}
-              required
-            />
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <button
-                  type="button"
-                  onClick={() => { setIndustryOpen(!industryOpen); setSubIndustryOpen(false); }}
-                  className="flex h-11 w-full items-center justify-between rounded-[6px] border border-[#CBD5E0] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#E65F2B] focus:ring-2 focus:ring-[#E65F2B]/15"
-                >
-                  <span className={selectedIndustry ? "text-[#2D3748]" : "text-[#A0AEC0]"}>
-                    {selectedIndustry || "选择行业"}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-[#718096]" />
-                </button>
-                {industryOpen && (
-                  <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white shadow-lg">
-                    {industries.map((ind) => (
-                      <button
-                        key={ind.name}
-                        type="button"
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-[#FFF5EB] transition ${selectedIndustry === ind.name ? "bg-[#FFF5EB] font-semibold text-[#E65F2B]" : "text-[#2D3748]"}`}
-                        onClick={() => { setSelectedIndustry(ind.name); setSelectedSubIndustry(""); setIndustryOpen(false); setSubIndustryOpen(true); }}
-                      >
-                        {ind.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {subIndustries.length > 0 && (
-                <div className="relative flex-1">
-                  <button
-                    type="button"
-                    onClick={() => setSubIndustryOpen(!subIndustryOpen)}
-                    className="flex h-11 w-full items-center justify-between rounded-[6px] border border-[#E65F2B]/40 bg-[#FFF5EB] px-3 py-2 text-sm outline-none transition focus:border-[#E65F2B] focus:ring-2 focus:ring-[#E65F2B]/15"
-                  >
-                    <span className={selectedSubIndustry ? "text-[#2D3748]" : "text-[#A0AEC0]"}>
-                      {selectedSubIndustry || "选择子类"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-[#718096]" />
-                  </button>
-                  {subIndustryOpen && (
-                    <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white shadow-lg">
-                      <button type="button" className="w-full px-3 py-2 text-left text-sm text-[#718096] hover:bg-[#EDF2F7]" onClick={() => { setSelectedSubIndustry(""); setSubIndustryOpen(false); }}>不选择子类</button>
-                      {subIndustries.map((sub) => (
-                        <button
-                          key={sub}
-                          type="button"
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-[#FFF5EB] transition ${selectedSubIndustry === sub ? "bg-[#FFF5EB] font-semibold text-[#E65F2B]" : "text-[#2D3748]"}`}
-                          onClick={() => { setSelectedSubIndustry(sub); setSubIndustryOpen(false); }}
-                        >
-                          {sub}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 第一行：品牌名 + 立即诊断 */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} placeholder="输入品牌名，例如：三三狐" maxLength={60} required />
             </div>
             <Button type="submit" size="lg" disabled={loading || !brandName.trim()}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               立即诊断
             </Button>
+          </div>
+
+          {/* 第二行：行业 + 子类，各占50% */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative">
+              <button type="button" onClick={() => { setIndustryOpen(!industryOpen); setSubIndustryOpen(false); }}
+                className="flex h-11 w-full items-center justify-between rounded-[6px] border border-[#CBD5E0] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#E65F2B] focus:ring-2 focus:ring-[#E65F2B]/15">
+                <span className={selectedIndustry ? "text-[#2D3748]" : "text-[#A0AEC0]"}>{selectedIndustry || "选择行业"}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-[#718096]" />
+              </button>
+              {industryOpen && (
+                <div className="absolute z-20 mt-1 w-full overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white shadow-lg" style={{ maxHeight: 280 }}>
+                  {industries.map((ind) => (
+                    <button key={ind.name} type="button"
+                      className={`w-full px-3 py-2.5 text-left text-sm transition ${selectedIndustry === ind.name ? "bg-[#FFF5EB] font-semibold text-[#E65F2B]" : "text-[#2D3748] hover:bg-[#FFF5EB]"}`}
+                      onClick={() => { setSelectedIndustry(ind.name); setSelectedSubIndustry(""); setIndustryOpen(false); setSubIndustryOpen(true); }}>
+                      {ind.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <button type="button" onClick={() => subIndustries.length > 0 && setSubIndustryOpen(!subIndustryOpen)}
+                className={`flex h-11 w-full items-center justify-between rounded-[6px] px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[#E65F2B]/15 ${subIndustries.length > 0 ? "border border-[#E65F2B]/40 bg-[#FFF5EB] focus:border-[#E65F2B]" : "border border-[#E2E8F0] bg-[#F8FAFC] cursor-not-allowed"}`}>
+                <span className={selectedSubIndustry ? "text-[#2D3748]" : subIndustries.length > 0 ? "text-[#A0AEC0]" : "text-[#CBD5E0]"}>{subIndustries.length > 0 ? (selectedSubIndustry || "选择子类（可选）") : "请先选择行业"}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-[#718096]" />
+              </button>
+              {subIndustryOpen && subIndustries.length > 0 && (
+                <div className="absolute z-20 mt-1 w-full overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white shadow-lg" style={{ maxHeight: 220 }}>
+                  <button type="button" className="w-full px-3 py-2.5 text-left text-sm text-[#718096] hover:bg-[#EDF2F7]" onClick={() => { setSelectedSubIndustry(""); setSubIndustryOpen(false); }}>不选择子类</button>
+                  {subIndustries.map((sub) => (
+                    <button key={sub} type="button"
+                      className={`w-full px-3 py-2.5 text-left text-sm transition ${selectedSubIndustry === sub ? "bg-[#FFF5EB] font-semibold text-[#E65F2B]" : "text-[#2D3748] hover:bg-[#FFF5EB]"}`}
+                      onClick={() => { setSelectedSubIndustry(sub); setSubIndustryOpen(false); }}>
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
