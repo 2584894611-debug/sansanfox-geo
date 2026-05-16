@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Activity, Eye, LineChart, Rocket, Search, ShieldCheck, Bell, FileText, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { AISearchMockup } from "@/components/ai-search-mockup";
@@ -77,15 +78,15 @@ export default function HomePage() {
                 {/* 信任指标 */}
                 <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-white/60">
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#48BB78]"></div>
+                    <div className="h-2 w-2 rounded-full bg-[#48BB78]" />
                     无需注册
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#48BB78]"></div>
+                    <div className="h-2 w-2 rounded-full bg-[#48BB78]" />
                     3大AI平台
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-[#48BB78]"></div>
+                    <div className="h-2 w-2 rounded-full bg-[#48BB78]" />
                     5分钟出报告
                   </div>
                 </div>
@@ -167,8 +168,9 @@ export default function HomePage() {
               © 2026 三三狐GEO · 武汉爱黑马文化传媒
             </div>
             <div className="flex gap-6 text-sm text-[#718096]">
-              <a href="/pricing" className="hover:text-[#1A365D]">定价方案</a>
-              <a href="/#features" className="hover:text-[#1A365D]">产品功能</a>
+              <Link href="/blog" className="hover:text-[#1A365D]">知识库</Link>
+              <Link href="/pricing" className="hover:text-[#1A365D]">定价方案</Link>
+              <Link href="/#features" className="hover:text-[#1A365D]">产品功能</Link>
               <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" className="hover:text-[#1A365D]">
                 鄂ICP备2025150688号
               </a>

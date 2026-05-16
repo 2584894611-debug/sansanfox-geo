@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "产品功能", href: "/#features" },
+  { label: "知识库", href: "/blog" },
   { label: "定价方案", href: "/pricing" },
   { label: "案例", href: "/report/demo-sample-report" },
 ];
