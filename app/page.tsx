@@ -4,6 +4,8 @@ import { BrandDiagnosisForm } from "@/components/brand-diagnosis-form";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent } from "@/components/ui/card";
 
+export const dynamic = "force-dynamic";
+
 const stats = [
   { label: "MVP模型", value: "3", icon: Activity },
   { label: "报告内容墙", value: "0", icon: ShieldCheck },
