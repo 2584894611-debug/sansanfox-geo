@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #2d3748;
+  --brand-orange: #e65f2b;
+  --brand-blue: #1a365d;
+  --border: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(230, 95, 43, 0.18);
+}
+
+mark {
+  border-radius: 4px;
+  background: rgba(230, 95, 43, 0.18);
+  color: #1a365d;
+  padding: 0 2px;
+}
+
+.report-watermark::after {
+  position: absolute;
+  inset: auto 24px 24px auto;
+  width: 220px;
+  height: 220px;
+  background-image: url("/logo.jpg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  content: "";
+  opacity: 0.045;
+  pointer-events: none;
+}

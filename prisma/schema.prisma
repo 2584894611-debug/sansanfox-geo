@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  phone         String?   @unique
+  wechatId      String?   @unique
+  plan          Plan      @default(FREE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  brands        Brand[]
+  reports       Report[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Brand {
+  id          String      @id @default(cuid())
+  name        String
+  industry    String?
+  domain      String?
+  aliases     String[]    @default([])
+  isOwn       Boolean     @default(true)
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  questions   Question[]
+  tasks       ScanTask[]
+  results     AnalysisResult[]
+  scores      DiagnosisScore[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Question {
+  id        String           @id @default(cuid())
+  text      String
+  source    QuestionSource   @default(AI_GENERATED)
+  enabled   Boolean          @default(true)
+  brandId   String
+  brand     Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  results   AnalysisResult[]
+  createdAt DateTime         @default(now())
+}
+
+model ScanTask {
+  id        String     @id @default(cuid())
+  brandId   String
+  brand     Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  status    TaskStatus @default(PENDING)
+  progress  Int        @default(0)
+  error     String?
+  report    Report?
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model AnalysisResult {
+  id          String           @id @default(cuid())
+  brandId     String
+  brand       Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  taskId      String?
+  modelName   AiModelName
+  promptUsed  String
+  rawResponse Json
+  answerText  String
+  citations   Json?
+  mentions    Mention[]
+  scores      DiagnosisScore[]
+  scannedAt   DateTime         @default(now())
+}
+
+model DiagnosisScore {
+  id                       String         @id @default(cuid())
+  resultId                 String?
+  result                   AnalysisResult? @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  brandId                  String
+  brand                    Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  taskId                   String?
+  overallScore             Float
+  searchRecommendScore     Float
+  infoCompletenessScore    Float
+  authorityScore           Float
+  differentiationScore     Float
+  structuredDataScore      Float
+  industryAvgOverall       Float?
+  industryAvgSearch        Float?
+  industryAvgInfo          Float?
+  industryAvgAuth          Float?
+  industryAvgDiff          Float?
+  industryAvgStruct        Float?
+  grade                    String?
+  createdAt                DateTime       @default(now())
+}
+
+model Mention {
+  id          String         @id @default(cuid())
+  resultId    String
+  result      AnalysisResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  brandName   String
+  mentionType MentionType
+  snippet     String
+  sentiment   Sentiment?
+  citationUrl String?
+  scoreWeight Float
+}
+
+model Report {
+  id        String     @id @default(cuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id])
+  taskId    String?    @unique
+  task      ScanTask?  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  type      ReportType @default(CUSTOM)
+  slug      String     @unique
+  url       String
+  createdAt DateTime   @default(now())
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum QuestionSource {
+  AI_GENERATED
+  USER_MANUAL
+}
+
+enum TaskStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AiModelName {
+  DOUBAO
+  DEEPSEEK
+  QWEN
+}
+
+enum MentionType {
+  DIRECT_CITATION
+  BRAND_MENTION
+  COMPETITOR_MENTION
+  GENERIC
+}
+
+enum Sentiment {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum ReportType {
+  MONTHLY
+  CUSTOM
+}
