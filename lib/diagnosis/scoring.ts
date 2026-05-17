@@ -11,20 +11,52 @@ const industryAvg = {
 
 export function buildScores(results: ParsedModelResult[]) {
   const mentioned = results.filter((result) => result.mentionStatus !== "未提及");
+  const positiveResults = results.filter((result) => result.sentiment === "POSITIVE");
+  const negativeResults = results.filter((result) => result.sentiment === "NEGATIVE");
+  const neutralResults = results.filter((result) => result.sentiment === "NEUTRAL");
+
   const avgStrength =
     results.reduce((sum, result) => sum + result.mentionStrength, 0) / Math.max(results.length, 1);
-  const positiveCount = results.filter((result) => result.sentiment === "POSITIVE").length;
+  const positiveCount = positiveResults.length;
+  const negativeCount = negativeResults.length;
   const citationCount = results.reduce((sum, result) => sum + result.citations.length, 0);
   const textRichness = results.reduce((sum, result) => sum + Math.min(result.answerText.length / 9, 100), 0) / Math.max(results.length, 1);
 
-  const searchRecommendScore = clamp((mentioned.length / Math.max(results.length, 1)) * 62 + avgStrength * 38);
-  const infoCompletenessScore = clamp(textRichness * 0.48 + mentioned.length * 10 + positiveCount * 4);
-  const authorityScore = clamp(citationCount * 12 + avgStrength * 42 + positiveCount * 6);
-  const differentiationScore = clamp(
-    results.filter((result) => /差异|优势|特色|适合|推荐|定位/.test(result.answerText)).length * 24 +
-      avgStrength * 30
+  // AI搜索推荐率：基于有效提及（正面+中性），负面不算推荐
+  const effectiveMentionRate = (positiveCount + neutralResults.length * 0.5) / Math.max(results.length, 1);
+  const searchRecommendScore = clamp(effectiveMentionRate * 55 + avgStrength * 45 - negativeCount * 12);
+
+  // 品牌信息完整度：正面回答贡献更多，负面打折
+  const infoCompletenessScore = clamp(
+    textRichness * 0.35 +
+    positiveCount * 14 +
+    neutralResults.length * 8 +
+    negativeCount * 2 -  // 负面回答信息完整度极低
+    negativeCount * 10
   );
-  const structuredDataScore = clamp(citationCount * 9 + mentioned.length * 12 + 28);
+
+  // 内容权威性：正面+引用=权威，负面不权威
+  const authorityScore = clamp(
+    positiveCount * 16 +
+    citationCount * 8 +
+    avgStrength * 35 -
+    negativeCount * 18
+  );
+
+  // 差异化特征表达：只有正面回答才算表达了差异
+  const differentiationScore = clamp(
+    positiveResults.filter((result) => /差异|优势|特色|适合|推荐|定位/.test(result.answerText)).length * 28 +
+    avgStrength * 25 -
+    negativeCount * 15
+  );
+
+  // 结构化数据覆盖
+  const structuredDataScore = clamp(
+    citationCount * 8 +
+    (results.length - negativeCount) * 14 +
+    22 -
+    negativeCount * 10
+  );
 
   const dimensions: DimensionScore[] = [
     {
