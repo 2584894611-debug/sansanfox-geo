@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import remarkHtml from 'remark-html';
+import remarkGfm from 'remark-gfm';
 import { getCategoryGradient, getCategoryBadgeVariant, formatDate } from './blog-utils';
 
 export interface PostFrontmatter {
@@ -73,7 +74,7 @@ export async function getPostBySlugAsync(slug: string): Promise<Post | null> {
   }
 
   const processedContent = await remark()
-    .use(remarkHtml, { sanitize: false })
+    .use(remarkGfm).use(remarkHtml, { sanitize: false })
     .process(post.content);
   
   const contentHtml = processedContent.toString();
