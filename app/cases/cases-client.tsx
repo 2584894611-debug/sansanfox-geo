@@ -175,8 +175,7 @@ export function CasesClient({ cases, stats }: CasesClientProps) {
                     {c.strengths.slice(0, 3).map((s, i) => (
                       <Badge
                         key={i}
-                        variant="secondary"
-                        className="bg-green-100 text-green-700"
+                        variant="green"
                       >
                         {s}
                       </Badge>
