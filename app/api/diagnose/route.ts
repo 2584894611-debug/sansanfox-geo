@@ -10,7 +10,64 @@ const DiagnoseSchema = z.object({
   questions: z.array(z.string().trim().min(1).max(120)).max(10).optional()
 });
 
+// ---- IP限频 ----
+const ipRequestMap = new Map<string, { count: number; resetAt: number }>();
+const MAX_REQUESTS_PER_MINUTE = 1;
+const MAX_REQUESTS_PER_DAY = 5;
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "unknown";
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; message?: string } {
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const minuteMs = 60 * 1000;
+
+  const record = ipRequestMap.get(ip);
+
+  if (!record || now > record.resetAt) {
+    // 新的1天窗口
+    ipRequestMap.set(ip, { count: 1, resetAt: now + dayMs });
+    return { allowed: true };
+  }
+
+  // 检查每日上限
+  if (record.count >= MAX_REQUESTS_PER_DAY) {
+    const hoursLeft = Math.ceil((record.resetAt - now) / (60 * 60 * 1000));
+    return { allowed: false, message: `今日诊断次数已用完，请${hoursLeft}小时后再试` };
+  }
+
+  record.count++;
+  return { allowed: true };
+}
+
+// 定期清理过期记录，防止内存泄漏
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, record] of ipRequestMap) {
+      if (now > record.resetAt) ipRequestMap.delete(ip);
+    }
+  }, 60 * 60 * 1000); // 每小时清理一次
+}
+
 export async function POST(request: Request) {
+  // 1. IP限频检查
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { message: rateLimitResult.message || "请求过于频繁，请稍后再试" },
+      { status: 429 }
+    );
+  }
+
+  // 2. 参数校验
   const body = await request.json().catch(() => null);
   const parsed = DiagnoseSchema.safeParse(body);
 
@@ -21,6 +78,7 @@ export async function POST(request: Request) {
     );
   }
 
+  // 3. 创建诊断任务
   const taskId = crypto.randomUUID();
   const shareSlug = crypto.randomUUID().slice(0, 8);
   const questions = normalizeQuestions(parsed.data.brandName, parsed.data.industry, parsed.data.questions);

@@ -24,7 +24,7 @@ export class DeepSeekAdapter implements ModelAdapter {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",  // 免费用户用Flash，付费用户通过环境变量切Pro
         messages: [{ role: "user", content: buildSearchPrompt(request) }],
         temperature: 0.2
       })
