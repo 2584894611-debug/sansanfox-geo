@@ -129,22 +129,7 @@ export const caseStudies: CaseStudy[] = [
     weaknesses: ["数字化内容薄弱", "新媒体运营弱", "年轻化转型慢"],
     thumbnail: "https://images.unsplash.com/photo-1555529669-2269763671c0?w=400&h=300&fit=crop",
   },
-  {
-    id: "blackhorse",
-    brand: "爱黑马传媒",
-    industry: "营销传媒",
-    location: "武汉",
-    geoScore: 62,
-    grade: "C+",
-    aiSearchRate: 70,
-    brandCompleteness: 58,
-    contentAuthority: 55,
-    differentiation: 68,
-    topIssue: "10年行业经验但官网SEO基础薄弱",
-    strengths: ["10年行业经验", "800万用户积累", "本地影响力强"],
-    weaknesses: ["官网SEO薄弱", "百科未建立", "AI搜索覆盖率低"],
-    thumbnail: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
-  },
+
 ];
 
 export function getScoreColor(score: number): string {
