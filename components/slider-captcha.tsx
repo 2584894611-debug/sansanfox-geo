@@ -91,14 +91,18 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
 
   // Touch events
   const onTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     handleStart(e.touches[0].clientX);
-    const onTouchMove = (ev: TouchEvent) => handleMove(ev.touches[0].clientX);
+    const onTouchMove = (ev: TouchEvent) => {
+      ev.preventDefault();
+      handleMove(ev.touches[0].clientX);
+    };
     const onTouchEnd = () => {
       handleEnd();
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
-    window.addEventListener("touchmove", onTouchMove);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onTouchEnd);
   };
 
