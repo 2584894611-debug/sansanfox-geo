@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createHmac } from "crypto";
 import { normalizeQuestions } from "@/lib/diagnosis/questions";
 import { enqueueDiagnosis } from "@/lib/jobs/scan-queue";
 import { saveTask } from "@/lib/stores/task-store";
@@ -8,7 +9,7 @@ const DiagnoseSchema = z.object({
   brandName: z.string().trim().min(1, "请输入品牌名").max(60, "品牌名不能超过60个字符"),
   industry: z.string().trim().max(40).optional(),
   questions: z.array(z.string().trim().min(1).max(120)).max(10).optional(),
-  captchaToken: z.string().optional()
+  captchaToken: z.string().min(1, "请先完成滑块验证")
 });
 
 // ---- IP限频 ----
@@ -53,31 +54,37 @@ if (typeof setInterval !== "undefined") {
   }, 60 * 60 * 1000);
 }
 
-// ---- Turnstile验证 ----
-async function verifyTurnstile(token: string, clientIp: string): Promise<boolean> {
-  const secretKey = process.env.TURNSTILE_SECRET_KEY;
-  if (!secretKey) {
-    // 没配Secret Key时跳过验证（开发环境）
-    console.warn("TURNSTILE_SECRET_KEY not configured, skipping captcha verification");
-    return true;
+// ---- 滑块验证码token校验 ----
+const CAPTCHA_SECRET = process.env.TURNSTILE_SECRET_KEY || "sansanfox-captcha-fallback-2026";
+const CAPTCHA_TOKEN_MAX_AGE = 5 * 60 * 1000; // 5分钟有效
+
+function verifyCaptchaToken(token: string): { valid: boolean; message?: string } {
+  // 格式: nonce.timestamp.signature
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return { valid: false, message: "验证token格式错误" };
   }
 
-  try {
-    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        secret: secretKey,
-        response: token,
-        remoteip: clientIp
-      })
-    });
-    const data = await response.json();
-    return data.success === true;
-  } catch (error) {
-    console.error("Turnstile verification failed:", error);
-    return false;
+  const [nonce, ts, sig] = parts;
+
+  // 验证签名
+  const expected = createHmac("sha256", CAPTCHA_SECRET)
+    .update(`${nonce}.${ts}`)
+    .digest("hex")
+    .substring(0, 16);
+
+  if (sig !== expected) {
+    return { valid: false, message: "验证失败，请重新验证" };
   }
+
+  // 验证时效性
+  const timestamp = parseInt(ts, 36);
+  const age = Date.now() - timestamp;
+  if (age > CAPTCHA_TOKEN_MAX_AGE || age < 0) {
+    return { valid: false, message: "验证已过期，请重新验证" };
+  }
+
+  return { valid: true };
 }
 
 export async function POST(request: Request) {
@@ -102,23 +109,13 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. 验证码校验（配置了Turnstile时必须通过）
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  if (turnstileSiteKey) {
-    const captchaToken = parsed.data.captchaToken;
-    if (!captchaToken) {
-      return NextResponse.json(
-        { message: "请先完成人机验证" },
-        { status: 400 }
-      );
-    }
-    const isValid = await verifyTurnstile(captchaToken, clientIp);
-    if (!isValid) {
-      return NextResponse.json(
-        { message: "人机验证失败，请重新验证" },
-        { status: 400 }
-      );
-    }
+  // 3. 滑块验证码token校验
+  const captchaResult = verifyCaptchaToken(parsed.data.captchaToken);
+  if (!captchaResult.valid) {
+    return NextResponse.json(
+      { message: captchaResult.message || "验证失败，请重新验证" },
+      { status: 400 }
+    );
   }
 
   // 4. 创建诊断任务

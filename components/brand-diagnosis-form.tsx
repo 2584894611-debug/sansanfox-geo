@@ -9,9 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { generateMonitoringQuestions } from "@/lib/diagnosis/questions";
 import { industries } from "@/lib/industry-data";
-import { useTurnstile } from "@/hooks/use-turnstile";
-
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+import { SliderCaptcha } from "@/components/slider-captcha";
 
 export function BrandDiagnosisForm() {
   const router = useRouter();
@@ -24,9 +22,7 @@ export function BrandDiagnosisForm() {
   const [newQuestion, setNewQuestion] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Turnstile验证码
-  const { containerRef, token, reset, isReady } = useTurnstile(TURNSTILE_SITE_KEY);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const currentIndustry = industries.find((i) => i.name === selectedIndustry);
   const subIndustries = currentIndustry?.children ?? [];
@@ -49,9 +45,8 @@ export function BrandDiagnosisForm() {
     event.preventDefault();
     setError("");
 
-    // 验证码校验（如果配置了Turnstile）
-    if (TURNSTILE_SITE_KEY && !token) {
-      setError("请先完成人机验证");
+    if (!captchaToken) {
+      setError("请先完成滑块验证");
       return;
     }
 
@@ -64,7 +59,7 @@ export function BrandDiagnosisForm() {
           brandName,
           industry: displayIndustry,
           questions: manualQuestions,
-          captchaToken: TURNSTILE_SITE_KEY ? token : undefined
+          captchaToken
         })
       });
       const data = await response.json();
@@ -72,7 +67,7 @@ export function BrandDiagnosisForm() {
       router.push(`/report/${data.taskId}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "诊断启动失败");
-      reset();
+      setCaptchaToken("");
     } finally {
       setLoading(false);
     }
@@ -174,14 +169,14 @@ export function BrandDiagnosisForm() {
             </div>
           </div>
 
-          {/* Turnstile 验证码 */}
-          {TURNSTILE_SITE_KEY && (
-            <div className="flex items-center gap-3">
-              <div ref={containerRef} />
-              {!isReady && <span className="text-xs text-[#718096]">正在加载验证码...</span>}
-              {isReady && !token && <span className="text-xs text-[#718096]">请完成验证后提交</span>}
-            </div>
-          )}
+          {/* 滑块验证码 */}
+          <div className="flex flex-col gap-2">
+            <SliderCaptcha
+              onVerified={(token) => setCaptchaToken(token)}
+              onReset={() => setCaptchaToken("")}
+            />
+            {captchaToken && <span className="text-xs text-[#38A169]">✓ 验证通过，可以提交诊断</span>}
+          </div>
 
           {error && <p className="text-sm font-medium text-[#B83232]">{error}</p>}
         </form>
