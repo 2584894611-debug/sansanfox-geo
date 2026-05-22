@@ -1,7 +1,7 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm config set registry https://registry.npmmirror.org && npm ci
 COPY . .
 RUN npx prisma generate
 RUN npm run build
