@@ -38,8 +38,9 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
   const handleEnd = useCallback(async () => {
     if (status !== "dragging") return;
 
-    // 滑到90%以上算通过
-    if (offset >= trackWidth * 0.88) {
+    // 滑到有效行程的90%以上算通过
+    const maxOffset = trackWidth - 44;
+    if (offset >= maxOffset * 0.88) {
       setStatus("success");
       setOffset(trackWidth - 44);
 
