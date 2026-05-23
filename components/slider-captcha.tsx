@@ -17,32 +17,36 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
   const [offset, setOffset] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
+  const offsetRef = useRef(0); // 用ref追踪实时offset，避免闭包陷阱
   const [errorMsg, setErrorMsg] = useState("");
 
   const trackWidth = 280;
+  const sliderWidth = 42;
+  const maxOffset = trackWidth - sliderWidth;
+  const passThreshold = maxOffset * 0.85; // 拖到85%即通过
 
   const handleStart = useCallback((clientX: number) => {
     if (status === "success") return;
     startXRef.current = clientX;
+    offsetRef.current = 0;
     setStatus("dragging");
     setErrorMsg("");
   }, [status]);
 
   const handleMove = useCallback((clientX: number) => {
-    if (status !== "dragging") return;
     const diff = clientX - startXRef.current;
-    const clamped = Math.max(0, Math.min(diff, trackWidth - 44));
+    const clamped = Math.max(0, Math.min(diff, maxOffset));
+    offsetRef.current = clamped;
     setOffset(clamped);
-  }, [status, trackWidth]);
+  }, [maxOffset]);
 
   const handleEnd = useCallback(async () => {
-    if (status !== "dragging") return;
+    // 用ref拿到实时值，不用state（避免闭包旧值问题）
+    const currentOffset = offsetRef.current;
 
-    // 滑到有效行程的90%以上算通过
-    const maxOffset = trackWidth - 44;
-    if (offset >= maxOffset * 0.88) {
+    if (currentOffset >= passThreshold) {
       setStatus("success");
-      setOffset(trackWidth - 44);
+      setOffset(maxOffset);
 
       // 向后端请求签名token
       try {
@@ -54,6 +58,7 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
           setStatus("error");
           setErrorMsg("验证服务异常，请重试");
           setTimeout(() => {
+            offsetRef.current = 0;
             setOffset(0);
             setStatus("idle");
             onReset?.();
@@ -63,6 +68,7 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
         setStatus("error");
         setErrorMsg("网络异常，请重试");
         setTimeout(() => {
+          offsetRef.current = 0;
           setOffset(0);
           setStatus("idle");
           onReset?.();
@@ -70,16 +76,20 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
       }
     } else {
       // 没滑到位，弹回
+      offsetRef.current = 0;
       setStatus("idle");
       setOffset(0);
     }
-  }, [status, offset, trackWidth, onVerified, onReset]);
+  }, [maxOffset, passThreshold, onVerified, onReset]);
 
   // Mouse events
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     handleStart(e.clientX);
-    const onMouseMove = (ev: MouseEvent) => handleMove(ev.clientX);
+    const onMouseMove = (ev: MouseEvent) => {
+      ev.preventDefault();
+      handleMove(ev.clientX);
+    };
     const onMouseUp = () => {
       handleEnd();
       window.removeEventListener("mousemove", onMouseMove);
@@ -106,7 +116,7 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
     window.addEventListener("touchend", onTouchEnd);
   };
 
-  const progress = offset / (trackWidth - 44);
+  const progress = offset / maxOffset;
 
   return (
     <div className="w-full max-w-[300px]">
@@ -119,7 +129,7 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
         <div
           className="absolute inset-y-0 left-0 rounded-l-lg transition-none"
           style={{
-            width: `${offset + 22}px`,
+            width: `${offset + sliderWidth / 2}px`,
             background: status === "success"
               ? "linear-gradient(90deg, #48BB78, #38A169)"
               : "linear-gradient(90deg, #E65F2B, #DD6B20)",
@@ -142,7 +152,7 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
 
         {/* 滑块 */}
         <div
-          className={`absolute top-0.5 h-[40px] w-[42px] rounded-md flex items-center justify-center cursor-grab shadow-sm transition-none ${
+          className={`absolute top-0.5 h-[40px] w-[${sliderWidth}px] rounded-md flex items-center justify-center cursor-grab shadow-sm transition-none ${
             status === "success"
               ? "bg-[#38A169] cursor-default"
               : status === "error"
@@ -168,6 +178,9 @@ export function SliderCaptcha({ onVerified, onReset }: SliderCaptchaProps) {
           )}
         </div>
       </div>
+      <p className="text-xs text-[#A0AEC0] mt-1.5 text-center">
+        {status === "success" ? "✓ 验证成功" : "拖动滑块到最右侧完成验证"}
+      </p>
     </div>
   );
 }
